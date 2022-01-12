@@ -8,6 +8,7 @@ Created on Wed Jan 12 11:20:34 2022
 
 import pandas as pd
 import numpy as np
+import copy
 
 pfad_o = "/home/joern/Aktuell/RiechenVerduennungAbstand/"
 pfad_u1 = "09Originale/"
@@ -26,4 +27,10 @@ print(xx.index)
 data = dfRiechenVerduennungAbstand.BMI * 1
 #data[12]= -11
 
-explore_tukey_lop(data=data)
+explore_tukey_lop(data=data, powers=[1])
+
+DemographicVariables = ["YOB", "sex_0f", "KG in kg", "Height in cm", "BMI"]
+data_demographics = copy.copy(dfRiechenVerduennungAbstand[DemographicVariables])
+
+box_and_heatplot(data_demographics, scale = True)
+

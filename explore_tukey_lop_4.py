@@ -6,19 +6,21 @@ Created on Mon Jan 10 18:47:48 2022
 @author: joern
 """
 
-def explore_tukey_lop(data, powers = [-2, -1, -0.5, 0, 0.5, 1, 2]):
-    
+
+def explore_tukey_lop(data, powers=[-2, -1, -0.5, 0, 0.5, 1, 2]):
+
     powersDict = {"reciprocal square": -2, "reciprocal": -1, "reciprocal square root": -
-              0.5, "log": 0, "square root": 0.5, "none": 1, "square": 2}
+                  0.5, "log": 0, "square root": 0.5, "none": 1, "square": 2}
     if powers:
         if not all(x in powersDict.values() for x in powers):
             raise Warning("Input does not macth Tukey's powers!")
             return
         else:
-            powers = {key: value for key, value in powersDict.items() if value in powers}
+            powers = {key: value for key, value in powersDict.items()
+                      if value in powers}
     else:
         powers = powersDict
-    
+
     import numpy as np
     import seaborn as sns
     import matplotlib.pyplot as plt
@@ -39,11 +41,11 @@ def explore_tukey_lop(data, powers = [-2, -1, -0.5, 0, 0.5, 1, 2]):
         np.random.seed()
         sample_size = len(data)
         qq = np.ones([sample_size, 3])
-        qq[:, 0] = np.sort(np.random.normal(size = sample_size))
+        qq[:, 0] = np.sort(np.random.normal(size=sample_size))
         qq[:, 1] = np.sort(data[0:sample_size])
         model = LinearRegression()
-        X = qq[:,0][:, np.newaxis]
-        model.fit(X, qq[:,1])
+        X = qq[:, 0][:, np.newaxis]
+        model.fit(X, qq[:, 1])
         predictions = model.predict(X)
         qq[:, 2] = predictions
         return(qq)
@@ -67,7 +69,5 @@ def explore_tukey_lop(data, powers = [-2, -1, -0.5, 0, 0.5, 1, 2]):
             sns.lineplot(ax=axes[2], x=qq_values[:, 0], y=qq_values[:, 2], color="salmon")
         plt.xlabel("Normal theoretical quantiles")
         plt.ylabel("Ordered data")
-        
+
     return(fig)
-
-
