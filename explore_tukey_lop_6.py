@@ -99,7 +99,7 @@ def explore_tukey_lop(data, powers=[-2, -1, -0.5, 0, 0.5, 1, 2], normtest="K^2 t
         if len(powers.keys()) > 1:
             sns.histplot(ax=axes[i, 0], x=data_transformed, color=(figColors[i])).set(
                 title="Histogram: Data = " + data.name)
-            sns.distplot(ax=axes[i, 1], x=data_transformed, hist=False, color=(figColors[i])).set(
+            sns.kdeplot(ax=axes[i, 1], x=data_transformed, color=(figColors[i])).set(
                 title="pdf: transformation = " + list(powers.keys())[i])
             sns.scatterplot(ax=axes[i, 2], x=qq_values[:, 0], y=qq_values[:, 1], color=(figColors[i])).set(
                 title="QQ plot, " + normtest + " p-value = " + normaltest_result_p)
@@ -108,7 +108,7 @@ def explore_tukey_lop(data, powers=[-2, -1, -0.5, 0, 0.5, 1, 2], normtest="K^2 t
         else:
             sns.histplot(ax=axes[0], x=data_transformed, color=(figColors[i])).set(
                 title="Histogram: Data = " + data.name)
-            sns.distplot(ax=axes[1], x=data_transformed, hist=False, color=(figColors[i])).set(
+            sns.kdeplot(ax=axes[1], x=data_transformed, color=(figColors[i])).set(
                 title="pdf: transformation = " + list(powers.keys())[i])
             sns.scatterplot(ax=axes[2], x=qq_values[:, 0], y=qq_values[:, 1], color=(figColors[i])).set(
                 title="QQ plot, " + normtest + " p-value = " + normaltest_result_p)
