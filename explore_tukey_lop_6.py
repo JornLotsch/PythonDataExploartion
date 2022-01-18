@@ -15,7 +15,7 @@ from scipy.stats import kstest, normaltest, zscore
 from pandas.api.types import is_numeric_dtype
 
 
-def explore_tukey_lop(data, powers=[-2, -1, -0.5, 0, 0.5, 1, 2], normtest="K^2 test", outlierremoval = False):
+def explore_tukey_lop(data, powers=[-2, -1, -0.5, 0, 0.5, 1, 2], normtest="K^2 test", outlierremoval=False):
 
     powersDict = {"reciprocal square": -2, "reciprocal": -1, "reciprocal square root": -
                   0.5, "log": 0, "square root": 0.5, "none": 1, "square": 2}
@@ -32,8 +32,7 @@ def explore_tukey_lop(data, powers=[-2, -1, -0.5, 0, 0.5, 1, 2], normtest="K^2 t
         powers = powersDict
 
     if not normtest in ["K^2 test", "KS test"]:
-        raise Warning(
-            "For normality testing, D’Agostino’s K^2 test and the KS test are implemented! Normailty test set to D’Agostino’s K^2 test.")
+        print("For normality testing, D’Agostino’s K^2 test and the KS test are implemented! Normailty test set to D’Agostino’s K^2 test.")
         normtest = "K^2 test"
 
     # %% Subfunction definitions
@@ -65,17 +64,17 @@ def explore_tukey_lop(data, powers=[-2, -1, -0.5, 0, 0.5, 1, 2], normtest="K^2 t
         raise Warning("Data is not numeric")
         return
     else:
-        data = data.dropna(axis = 0)
-    
+        data = data.dropna(axis=0)
+
     if outlierremoval:
-        data = data.dropna(axis = 0)
+        data = data.dropna(axis=0)
         z = np.abs(zscore(data))
         data = data[(z < 3)]
-   
+
     if len(data) < 2:
-       raise Warning("Too few data")
-       return
-    figColors = ["salmon" if x==1 else "Dodgerblue" for x in powers.values()]
+        raise Warning("Too few data")
+        return
+    figColors = ["salmon" if x == 1 else "Dodgerblue" for x in powers.values()]
     fig, axes = plt.subplots(
         len(powers.keys()), 3, figsize=(20, 5*len(powers.keys())))
     for i, actual_power in enumerate(list(powers.values())):
