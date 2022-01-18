@@ -115,8 +115,8 @@ def perform_projections(data, y, scale=True, method="PCA", showonlyPC12=False, b
             projections_reconstruction)
         mean_sq_reconstructionError = 1 / \
             np.sqrt(((X_reconstructed - X) ** 2).mean())
-        # mean_sq_reconstructionError.sort_values(
-        #     axis=0, ascending=False, inplace=True)
+        mean_sq_reconstructionError.sort_values(
+            axis=0, ascending=False, inplace=True)
 
     with sns.axes_style("darkgrid"):
         if method == "PCA":
@@ -203,7 +203,7 @@ def perform_projections(data, y, scale=True, method="PCA", showonlyPC12=False, b
             ax7.set_title("PCA reconstruction RMSE")
             ax7.set_xticklabels(ax7.get_xticklabels(), rotation=90)
             ax7.text(len(X.columns)/2, 0.95 * np.max(mean_sq_reconstructionError), "Overal mean RMSE: " +
-                     str(round(np.mean(mean_sq_reconstructionError), 3)), va="baseline", color="red")
+                     str(round(np.mean(1/mean_sq_reconstructionError), 3)), va="baseline", color="red")
 
     if method == "PCA":
         return {"Fig": fig, "loadings": loadings_df, "projections": finalDf, "reconstruction_errors": mean_sq_reconstructionError}
