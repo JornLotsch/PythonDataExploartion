@@ -27,10 +27,8 @@ def box_and_heatplot(data, title=None, scale=False, **kwargs):
         else:
             ax = sns.heatmap(ax=axes[0], data=data, **kwargs)
         ax.set_xticklabels(ax.get_xticklabels(), rotation=90)
-        ax = sns.violinplot(ax=axes[1], data=data, saturation=0.5)
+        ax = sns.violinplot(ax=axes[1], data=data, saturation=0.5, linewidth= 0.1)
         ax.set_xticklabels(ax.get_xticklabels(), rotation=90)
-        plt.setp(ax.collections, alpha=.3)
-        ax = sns.boxplot(ax=axes[1], data=data, fliersize=0,  width=0.2)
         plt.setp(ax.collections, alpha=.5)
         sns.swarmplot(ax=axes[1], data=data)
     else:
