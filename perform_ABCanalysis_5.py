@@ -25,17 +25,17 @@ def ABC_clean_data(data):
         raise Warning("Data is not numeric")
         return
 
-    data = data[~np.isnan(data)]
-    data = data[~np.isinf(data)]
-    data = data[data > 0]
-    if isinstance(data, pd.Series):
-        varnames = data.index
-        data = data.tolist()
-    else:
-        varnames = ["Var"+str(i) for i in list(range(1, len(data)+1))]
+    # if isinstance(data, pd.Series):
+    #     varnames = data.index
+    #     data = data.tolist()
+    # else:
+    #     varnames = ["Var"+str(i) for i in list(range(1, len(data)+1))]
 
-    dfItems = pd.DataFrame(data={"varname": varnames, "value": data})
-    # dfItems = pd.DataFrame() data.to_frame(name="Value")
+    dfItems = pd.DataFrame(data)
+    dfItems.columns = ["value"]
+    dfItems.replace([np.inf, -np.inf], np.nan, inplace=True)
+    dfItems = dfItems.dropna()
+    dfItems = dfItems[dfItems> 0]
 
     if len(dfItems) != len(data):
         print(str(len(dfItems)) + "rows of " + str(len(data)) +
@@ -96,14 +96,12 @@ def ABC_calc(CleanedData, ABCcurveData):
         ABexchanged = True
         JurenInd = breakEvenInd
         Bx = curve["effort"][ParetoPointInd]
-        A = breakEvenPoint
-        B = ParetoPoint
+        A, B = breakEvenPoint, ParetoPoint
     else:
         ABexchanged = False
         JurenInd = ParetoPointInd
         Bx = curve["effort"][breakEvenInd]
-        A = ParetoPoint
-        B = breakEvenPoint
+        A, B = ParetoPoint, breakEvenPoint
 
     Juren = [[Bx, 1.0]]
     distBx = distance.cdist(curve.to_numpy(), Juren, "euclidean")

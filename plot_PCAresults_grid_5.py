@@ -13,6 +13,8 @@ import matplotlib.gridspec as gridspec
 import pandas as pd
 import numpy as np
 
+from perform_ABCanalysis_5 import ABC_analysis
+
 
 def create_projectionplot(data, scale, biplot, showPCs, model_projection, ax=None):
     ax = ax or plt.gca()
@@ -45,6 +47,7 @@ def create_projectionplot_marginaldits(data, showPC, n_dims, y1, y2, y_comb, sta
         if len(stats2) > 0:
             ax.text(min(data), 0.4 * ax.get_ylim()[1], "Group differences " + str(y2.name) + "p = " +
                     "{:.2e}".format(stats2[showPC]), va="baseline")
+        ax.set_xlabel(None)
     else:
         sns.kdeplot(ax=ax, y=data, hue=y_comb)
         if n_dims > 1:
@@ -54,7 +57,7 @@ def create_projectionplot_marginaldits(data, showPC, n_dims, y1, y2, y_comb, sta
             if len(stats2) > 0:
                 ax.text(0.4 * ax.get_xlim()[1], np.mean(data), "Group differences " + str(y2.name) + "p = " + "{:.2e}".format(stats2[showPC]),
                         rotation=-90, va="top")
-    ax.set_ylabel(None)
+        ax.set_ylabel(None)
     return
 
 
@@ -90,17 +93,11 @@ def create_heatmap(data, ax=None, **kwargs):
     return
 
 
-def plot_results_grid(ndimensionsmethod, showPCs, finalDf, scale, biplot, model_projection, X_sc, X_dist, y1, y2, y_comb, stats_p_y1, stats_p_y2,
+def plot_results_grid(ndimensionsmethod, showPCs, finalDf, scale, minexplainedvarperc, biplot, model_projection, X_sc, X_dist, y1, y2, y_comb, stats_p_y1, stats_p_y2,
                       reconstructionError, reconstructionError_dists, num_pc, X_reconstructed, X_reconstructed_dists, idxn_dim,
                       num_features, indexGE90, pc_list, eigenvalues,
                       n_dims, loadings_df_z, feature_imp_mat, feature_imp,
-                      relevant_variables_reconstruction_error_values, relevant_variables_reconstruction_error_dists,
-                      relevant_variables_PCA,
-                      reconstruction_error_per_variable_values, reconstruction_error_per_variable_dist):
-
-    mean_reconstructionError_values = reconstructionError[idxn_dim].tolist()[0]
-    mean_reconstructionError_dists = reconstructionError_dists[idxn_dim].tolist()[
-        0]
+                      relevant_variables_PCA):
 
     with sns.axes_style("darkgrid"):
         fig = plt.figure(figsize=(26, 24))
@@ -113,27 +110,17 @@ def plot_results_grid(ndimensionsmethod, showPCs, finalDf, scale, biplot, model_
         ax4 = fig.add_subplot(gs0[0:2, 6:])  # PCA explained variance
         ax5 = fig.add_subplot(gs0[2:4, 6:])  # PCA eigenvalues
         ax6 = fig.add_subplot(gs0[4:6, 6:])  # reconstruction error
-        # data reconstruction vs orginal values scatterplot
-        ax7 = fig.add_subplot(gs0[6:8, 6:8])
-        # data reconstruction vs orginal values violinplot
-        ax8 = fig.add_subplot(gs0[6:10, 8:9])
-        # data reconstruction vs orginal distances violinplot
-        ax9 = fig.add_subplot(gs0[6:10, 9:])
-        # data reconstruction vs orginal distances scatterplot
-        ax10 = fig.add_subplot(gs0[8:10, 6:8])
+        
+        ax7 = fig.add_subplot(gs0[6:8, 6:8]) # data reconstruction vs orginal values scatterplot
+        ax8 = fig.add_subplot(gs0[6:10, 8:9]) # data reconstruction vs orginal values violinplot
+        ax9 = fig.add_subplot(gs0[6:10, 9:]) # data reconstruction vs orginal distances violinplot
+        ax10 = fig.add_subplot(gs0[8:10, 6:8]) # data reconstruction vs orginal distances scatterplot
 
-        ax11 = fig.add_subplot(gs0[10:, :2])  # PCA loadings z heatmap
-        # PCA abs loadings z * egenvalues heatmap
-        ax12 = fig.add_subplot(gs0[10:, 2:4])
-        # PCA fatcor imprtance ABC barplot
-        ax13 = fig.add_subplot(gs0[10:, 4:6])
-        # Reconstruction error values ABC barplot
-        ax14 = fig.add_subplot(gs0[10:, 6:8])
-        # Reconstruction error distances ABC barplot
-        ax15 = fig.add_subplot(gs0[10:, 8:])
-
-        # number of dimenstions used in final calculations
-        ax00 = fig.add_subplot(gs0[0, 5])
+        ax11 = fig.add_subplot(gs0[10:, :3])  # PCA loadings z heatmap
+        ax12 = fig.add_subplot(gs0[10:, 3:6]) # PCA abs loadings z * egenvalues heatmap
+        ax13 = fig.add_subplot(gs0[10:, 6:]) # PCA variable importance ABC barplot
+        
+        ax00 = fig.add_subplot(gs0[0, 5]) # number of dimenstions used in final calculations
         ax00.xaxis.set_visible(False)
         ax00.yaxis.set_visible(False)
         ax00.text(0.5, 0.5, "Crtierion:\n" + str(ndimensionsmethod), color="red",
@@ -144,7 +131,10 @@ def plot_results_grid(ndimensionsmethod, showPCs, finalDf, scale, biplot, model_
         ax01.yaxis.set_visible(False)
         ax01.text(0.5, 0.5, "Dimensions:" + str(n_dims), color="red",
                   va="center", ha="center", fontsize=12, weight='bold')
-
+        
+        mean_reconstructionError_values = reconstructionError[idxn_dim].tolist()[0]
+        mean_reconstructionError_dists = reconstructionError_dists[idxn_dim].tolist()[0]
+        
         create_projectionplot(ax=ax1, data=finalDf, scale=scale,
                               biplot=biplot, showPCs=showPCs, model_projection=model_projection)
 
@@ -155,15 +145,23 @@ def plot_results_grid(ndimensionsmethod, showPCs, finalDf, scale, biplot, model_
             ax=ax3, data=finalDf.iloc[:, showPCs[1]], showPC=1, n_dims=n_dims, y1=y1, y2=y2, y_comb=y_comb, stats1=stats_p_y1, stats2=stats_p_y2, rotation=-90)
         ax3.set_ylim(ax1.get_ylim())
 
+        
+        ABC_n_explainedVariance= ABC_analysis(data=model_projection.explained_variance_ratio_)
         create_lineplot(ax=ax4, x=range(1, len(model_projection.components_)+1),
                         y=np.cumsum(model_projection.explained_variance_ratio_), marker="o")
         ax4.set_xlabel("PC count")
         ax4.set_ylabel("Cumulative explaned variance")
         ax4.set_title("PCA component explained variance")
         ax4.axhline(0.9, color="salmon", linestyle="dotted")
-        ax4.text(num_pc*0.5, 0.1, "90 % variance expianed with " + str(indexGE90) + " PCs",
+        axRange = ax4.get_ylim()[1] - ax4.get_ylim()[0]
+        ax4.text(num_pc*0.5, ax4.get_ylim()[0] + 0.2 * axRange, "Relevant dimensions (%" + str(minexplainedvarperc) + \
+                 " explained variance): " + str(indexGE90) + " PCs",
+                 rotation=0, va="center", color="red")
+        ax4.text(num_pc*0.5, ax4.get_ylim()[0] + 0.5 * axRange, "Relevant dimensions (ABC explained variance): " + \
+                 str(len(ABC_n_explainedVariance["Aind"])) + " PCs",
                  rotation=0, va="center", color="red")
 
+        ABC_n_eigenvalues = ABC_analysis(data=model_projection.explained_variance_)
         create_barplot(ax=ax5, x=pc_list, y=eigenvalues,
                        color="dodgerblue")
         ax5.set_xlabel(None)
@@ -173,6 +171,8 @@ def plot_results_grid(ndimensionsmethod, showPCs, finalDf, scale, biplot, model_
         ax5.set_xticklabels(ax5.get_xticklabels(), rotation=90)
         ax5.text(num_pc*0.5, 0.95 * np.max(eigenvalues), "Relevant dimensions (Kaiser-Guttman): " +
                  str(np.argmax(eigenvalues < 1)), va="center", color="red")
+        ax5.text(num_pc*0.5, 0.85 * np.max(eigenvalues), "Relevant dimensions (ABC eigenvalues): " +
+                 str(len(ABC_n_eigenvalues["Aind"])), va="center", color="red")
 
         df_reconstructionserrors = pd.DataFrame({"Values": reconstructionError.flatten().tolist(),
                                                  "Distances": reconstructionError_dists.flatten().tolist()})
@@ -243,13 +243,13 @@ def plot_results_grid(ndimensionsmethod, showPCs, finalDf, scale, biplot, model_
             "blend:#03118f,#ecebf4,#572c92", as_cmap=True)
         n_dims_heat = num_pc if num_pc < 20 else n_dims
         create_heatmap(ax=ax11, data=loadings_df_z.T[0:n_dims_heat], cmap=VioletBlue)
-        ax11.set_title("Z-normalized loadings")
+        ax11.set_title("Z loadings")
         ax11.set_xlabel("Variables")
         ax11.set_xticklabels(ax11.get_xticklabels(), rotation=90)
 
         create_heatmap(
             ax=ax12, data=feature_imp_mat.T[0:n_dims_heat], cmap="Purples")
-        ax12.set_title("|Z-normalized loadings| * explained variance")
+        ax12.set_title("|Z loadings| * explained variance")
         ax12.set_xlabel("Variables")
         ax12.set_xticklabels(ax12.get_xticklabels(), rotation=90)
 
@@ -266,40 +266,7 @@ def plot_results_grid(ndimensionsmethod, showPCs, finalDf, scale, biplot, model_
                        order=df_relevant_variables_PCA.index)
         ax13.set_xticklabels(ax13.get_xticklabels(), rotation=90)
         ax13.set_ylabel("Normalized correlation with original data")
-        ax13.set_title("PCA feature importance in relevant PCs")
+        ax13.set_title("Feature importance in relevant PCs")
 
-        df_reconstruction_error_per_variable_values = pd.DataFrame(
-            reconstruction_error_per_variable_values)
-        df_reconstruction_error_per_variable_values.columns = ["values"]
-        df_reconstruction_error_per_variable_values["color"] = "dodgerblue"
-        df_reconstruction_error_per_variable_values.at[relevant_variables_reconstruction_error_values.index.tolist(
-        ), "color"] = "salmon"
-        df_reconstruction_error_per_variable_values.sort_values(
-            by="values", ascending=True, inplace=True)
-        create_barplot(ax=ax14, data=df_reconstruction_error_per_variable_values, x=df_reconstruction_error_per_variable_values.index,
-                       y="values", palette=df_reconstruction_error_per_variable_values["color"].values,
-                       order=df_reconstruction_error_per_variable_values.index)
-        ax14.set_xlabel("Variables")
-        ax14.set_ylabel("Standardized RMSE")
-        ax14.set_title("Values reconstruction error")
-        ax14.set_xticklabels(ax14.get_xticklabels(), rotation=90)
-
-        df_reconstruction_error_per_variable_dist = pd.DataFrame(
-            reconstruction_error_per_variable_dist)
-        df_reconstruction_error_per_variable_dist.columns = ["dists"]
-        df_reconstruction_error_per_variable_dist["color"] = "dodgerblue"
-        df_reconstruction_error_per_variable_dist.at[relevant_variables_reconstruction_error_dists.index.tolist(
-        ), "color"] = "salmon"
-        df_reconstruction_error_per_variable_dist.sort_values(
-            by="dists", ascending=True, inplace=True)
-        create_barplot(ax=ax15, data=df_reconstruction_error_per_variable_dist, x=df_reconstruction_error_per_variable_dist.index,
-                       y="dists", palette=df_reconstruction_error_per_variable_dist["color"].values,
-                       order=df_reconstruction_error_per_variable_dist.index)
-        ax15.set_xlabel("Variables")
-        ax15.set_ylabel("Standardized RMSE")
-        ax15.set_title("Distances reconstruction error")
-        ax15.set_xticklabels(ax15.get_xticklabels(), rotation=90)
-
-        ax00.xaxis.set_visible(False)
 
     return fig
