@@ -110,14 +110,14 @@ def perform_pca(data, target=None, PC_criterion="KaiserGuttman", plotReduced = 0
             ax6.text(0.5, 0.95 * np.max(eigenvalues), "Retained PCs: " + str(n_PCs), va="center", color="red")
             
         elif plotReduced == 1:
-            fig = plt.figure(figsize=(20, 20))
-            gs0 = gridspec.GridSpec(8, 8, figure=fig, wspace=.4, hspace=.5)
+            fig = plt.figure(figsize=(10, 20))
+            gs0 = gridspec.GridSpec(8, 4, figure=fig, wspace=.4, hspace=.5)
     
             ax3 = fig.add_subplot(gs0[:4, :4])  
-            ax8 = fig.add_subplot(gs0[:2, 6:]) 
-            ax7 = fig.add_subplot(gs0[2:4, 6:]) 
-            ax5 = fig.add_subplot(gs0[:2, 4:6]) 
-            ax6 = fig.add_subplot(gs0[2:4:, 4:6]) 
+            ax8 = fig.add_subplot(gs0[4:6, 2:4]) 
+            ax7 = fig.add_subplot(gs0[6:, 2:4]) 
+            ax5 = fig.add_subplot(gs0[4:6, :2]) 
+            ax6 = fig.add_subplot(gs0[6:, :2]) 
                     
             PCA_biplot(ax = ax3, projections=projected, components = pca.components_ , target = target, labels = data.columns)
             ax3.set_title("Projections")

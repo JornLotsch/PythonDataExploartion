@@ -34,7 +34,7 @@ def ABC_clean_data(data):
     dfItems = pd.DataFrame(data)
     dfItems.columns = ["value"]
     dfItems.replace([np.inf, -np.inf], np.nan, inplace=True)
-    dfItems = dfItems[dfItems> 0]
+    dfItems = dfItems[dfItems > 0]
     dfItems = dfItems.dropna()
 
     if len(dfItems) != len(data):
@@ -162,29 +162,31 @@ def ABC_plot(ABCresults, CleanedData, ax=None):
     sns.lineplot(ax=ax, x=[0, ABCresults["C"].values.tolist()[0][0]],
                  y=[ABCresults["C"].values.tolist()[0][1], ABCresults["C"].values.tolist()[0][1]], color="salmon", linewidth=2)
     sns.lineplot(ax=ax, x=pUnif, y=pUnif, color="magenta", linestyle="dashed")
-    sns.lineplot(ax=ax, x=pUnif, y=ABCuniform, color="green", linestyle="dotted")
+    sns.lineplot(ax=ax, x=pUnif, y=ABCuniform,
+                 color="green", linestyle="dotted")
     ax.text(0.5 * ABCresults["A"].values.tolist()[0][0], .1,
-             "Set A:\nn = " + str(len(ABCresults["Aind"])),
-             ha='center', size='large', color='blue', weight='bold')
+            "Set A:\nn = " + str(len(ABCresults["Aind"])),
+            ha='center', size='large', color='blue', weight='bold')
     ax.text(0.5 * (ABCresults["C"].values.tolist()[0][0] + ABCresults["A"].values.tolist()[0][0]), .1,
-             "Set B:\nn = " + str(len(ABCresults["Bind"])),
-             ha='center', size='medium', weight='semibold')
+            "Set B:\nn = " + str(len(ABCresults["Bind"])),
+            ha='center', size='medium', weight='semibold')
     ax.text(0.5 * (1 + ABCresults["C"].values.tolist()[0][0]), .1,
-             "Set C:\nn = " + str(len(ABCresults["Cind"])),
-             ha='center', size='medium', weight='semibold')
+            "Set C:\nn = " + str(len(ABCresults["Cind"])),
+            ha='center', size='medium', weight='semibold')
 
     return
 
 
-def ABC_analysis(data, PlotIt=False, ax = None):
+def ABC_analysis(data, PlotIt=False, ax=None):
     ABCresults = None
     CleanedData = ABC_clean_data(data)
     if CleanedData.shape[0] > 0:
         ABCcurveData = ABC_curve(CleanedData=CleanedData)
-        ABCresults = ABC_calc(CleanedData=CleanedData, ABCcurveData=ABCcurveData)
+        ABCresults = ABC_calc(CleanedData=CleanedData,
+                              ABCcurveData=ABCcurveData)
         if PlotIt:
             if ax == None:
                 fig, ax = plt.subplots(figsize=(10, 10))
-            ABC_plot(ABCresults=ABCresults, CleanedData=CleanedData, ax = ax)
+            ABC_plot(ABCresults=ABCresults, CleanedData=CleanedData, ax=ax)
 
     return ABCresults
