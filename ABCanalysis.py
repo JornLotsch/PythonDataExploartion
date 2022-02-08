@@ -34,8 +34,8 @@ def ABC_clean_data(data):
     dfItems = pd.DataFrame(data)
     dfItems.columns = ["value"]
     dfItems.replace([np.inf, -np.inf], np.nan, inplace=True)
-    dfItems = dfItems.dropna()
     dfItems = dfItems[dfItems> 0]
+    dfItems = dfItems.dropna()
 
     if len(dfItems) != len(data):
         print(str(len(dfItems)) + "rows of " + str(len(data)) +
@@ -131,7 +131,7 @@ def ABC_calc(CleanedData, ABCcurveData):
             "ABlimit": ABlimit, "BClimit": BClimit}
 
 
-def ABC_plot(ABCresults, CleanedData):
+def ABC_plot(ABCresults, CleanedData, ax=None):
     CleanedData_sorted = CleanedData.sort_values(
         by="value", ascending=False, inplace=False)
 
@@ -149,41 +149,42 @@ def ABC_plot(ABCresults, CleanedData):
     B = MaxX - A
     ABCuniform = (-0.5 * B * pUnif**2 + MaxX * pUnif)/(A + 0.5 * B)
 
-    with sns.axes_style("darkgrid"):
-        fig, ax = plt.subplots(figsize=(10, 10))
-        ax = sns.scatterplot(x=x, y=y, color="none", edgecolor="blue")
-        ax.margins(x=0, y=0)
-        sns.lineplot(x=ABCresults["p"],
-                     y=ABCresults["ABC"], color="dodgerblue")
-        sns.lineplot(x=[ABCresults["A"].values.tolist()[0][0], ABCresults["A"].values.tolist()[0][0]],
-                     y=[0, ABCresults["A"].values.tolist()[0][1]], color="salmon", linewidth=2)
-        sns.lineplot(x=[0, ABCresults["A"].values.tolist()[0][0]],
-                     y=[ABCresults["A"].values.tolist()[0][1], ABCresults["A"].values.tolist()[0][1]], color="salmon", linewidth=2)
-        sns.lineplot(x=[ABCresults["C"].values.tolist()[0][0], ABCresults["C"].values.tolist()[0][0]],
-                     y=[0, ABCresults["C"].values.tolist()[0][1]], color="salmon", linewidth=2)
-        sns.lineplot(x=[0, ABCresults["C"].values.tolist()[0][0]],
-                     y=[ABCresults["C"].values.tolist()[0][1], ABCresults["C"].values.tolist()[0][1]], color="salmon", linewidth=2)
-        sns.lineplot(x=pUnif, y=pUnif, color="magenta", linestyle="dashed")
-        sns.lineplot(x=pUnif, y=ABCuniform, color="green", linestyle="dotted")
-        plt.text(0.5 * ABCresults["A"].values.tolist()[0][0], .1,
-                 "Set A:\nn = " + str(len(ABCresults["Aind"])),
-                 horizontalalignment='center', size='large', color='blue', weight='bold')
-        plt.text(0.5 * (ABCresults["C"].values.tolist()[0][0] + ABCresults["A"].values.tolist()[0][0]), .1,
-                 "Set B:\nn = " + str(len(ABCresults["Bind"])),
-                 horizontalalignment='center', size='medium', weight='semibold')
-        plt.text(0.5 * (1 + ABCresults["C"].values.tolist()[0][0]), .1,
-                 "Set C:\nn = " + str(len(ABCresults["Cind"])),
-                 horizontalalignment='center', size='medium', weight='semibold')
-    return(fig)
+    ax = ax or plt.gca()
+    sns.scatterplot(ax=ax, x=x, y=y, color="none", edgecolor="blue")
+    sns.lineplot(ax=ax, x=ABCresults["p"],
+                 y=ABCresults["ABC"], color="dodgerblue")
+    sns.lineplot(ax=ax, x=[ABCresults["A"].values.tolist()[0][0], ABCresults["A"].values.tolist()[0][0]],
+                 y=[0, ABCresults["A"].values.tolist()[0][1]], color="salmon", linewidth=2)
+    sns.lineplot(ax=ax, x=[0, ABCresults["A"].values.tolist()[0][0]],
+                 y=[ABCresults["A"].values.tolist()[0][1], ABCresults["A"].values.tolist()[0][1]], color="salmon", linewidth=2)
+    sns.lineplot(ax=ax, x=[ABCresults["C"].values.tolist()[0][0], ABCresults["C"].values.tolist()[0][0]],
+                 y=[0, ABCresults["C"].values.tolist()[0][1]], color="salmon", linewidth=2)
+    sns.lineplot(ax=ax, x=[0, ABCresults["C"].values.tolist()[0][0]],
+                 y=[ABCresults["C"].values.tolist()[0][1], ABCresults["C"].values.tolist()[0][1]], color="salmon", linewidth=2)
+    sns.lineplot(ax=ax, x=pUnif, y=pUnif, color="magenta", linestyle="dashed")
+    sns.lineplot(ax=ax, x=pUnif, y=ABCuniform, color="green", linestyle="dotted")
+    ax.text(0.5 * ABCresults["A"].values.tolist()[0][0], .1,
+             "Set A:\nn = " + str(len(ABCresults["Aind"])),
+             ha='center', size='large', color='blue', weight='bold')
+    ax.text(0.5 * (ABCresults["C"].values.tolist()[0][0] + ABCresults["A"].values.tolist()[0][0]), .1,
+             "Set B:\nn = " + str(len(ABCresults["Bind"])),
+             ha='center', size='medium', weight='semibold')
+    ax.text(0.5 * (1 + ABCresults["C"].values.tolist()[0][0]), .1,
+             "Set C:\nn = " + str(len(ABCresults["Cind"])),
+             ha='center', size='medium', weight='semibold')
+
+    return
 
 
-def ABC_analysis(data, PlotIt=False):
+def ABC_analysis(data, PlotIt=False, ax = None):
+    ABCresults = None
     CleanedData = ABC_clean_data(data)
-    ABCcurveData = ABC_curve(CleanedData=CleanedData)
-    ABCresults = ABC_calc(CleanedData=CleanedData, ABCcurveData=ABCcurveData)
-    if PlotIt:
-        fig = ABC_plot(ABCresults=ABCresults, CleanedData=CleanedData)
-        ABCresults["Figure"] = fig
-    else:
-        ABCresults["Figure"] = None
+    if CleanedData.shape[0] > 0:
+        ABCcurveData = ABC_curve(CleanedData=CleanedData)
+        ABCresults = ABC_calc(CleanedData=CleanedData, ABCcurveData=ABCcurveData)
+        if PlotIt:
+            if ax == None:
+                fig, ax = plt.subplots(figsize=(10, 10))
+            ABC_plot(ABCresults=ABCresults, CleanedData=CleanedData, ax = ax)
+
     return ABCresults
