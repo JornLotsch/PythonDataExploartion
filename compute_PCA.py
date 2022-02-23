@@ -8,11 +8,14 @@ Created on Tue Feb  1 08:09:01 2022
 
 import pandas as pd
 import numpy as np
+import string
 
 from sklearn.decomposition import PCA
 
 import seaborn as sns
 import matplotlib.pyplot as plt
+from matplotlib import cm
+
 import matplotlib.gridspec as gridspec
 from scipy.stats import boxcox
 from ABCanalysis import ABC_analysis
@@ -21,6 +24,10 @@ from ABCanalysis import ABC_analysis
 #https://stackoverflow.com/questions/39216897/plot-pca-loadings-and-loading-in-biplot-in-sklearn-like-rs-autoplot
 
 # %% Functions
+def annotate_axes(ax, text, fontsize=18):
+    ax.text(-.01, 1.01, text, transform=ax.transAxes,
+            ha="center", va="center", fontsize=fontsize, color="black")
+    
 def PCA_biplot (projections, components, target = None, biplot = True, labels = None, ax = None):
     
     ax = ax or plt.gca()
@@ -33,14 +40,17 @@ def PCA_biplot (projections, components, target = None, biplot = True, labels = 
         yvector = components[1]
 
         for i in range(len(xvector)):
+            max_colors = len(xvector) + 1
+            cmap = cm.get_cmap('tab10')  #('hsv') #('nipy_spectral')
+            col = cmap( ((5 * i) % max_colors) / max_colors )
             ax.arrow(x=0, y=0, dx=xvector[i]*max(projections[:,0]), dy=yvector[i]*max(projections[:,1]),
-                     color="salmon", width=0.005, head_width=0.05)
+                     color=col, width=0.005, head_width=0.05)
             if labels is None:
                 ax.text(xvector[i]*max(projections[:,0])*1.1, yvector[i]*max(projections[:,1])*1.1,
-                    "Var"+str(i+1), color="red")
+                    "Var"+str(i+1), color=col)
             else:
                 ax.text(xvector[i]*max(projections[:,0])*1.1, yvector[i]*max(projections[:,1])*1.1,
-                    labels[i], color="red")
+                    labels[i], color=col)
     return
     
   
@@ -52,7 +62,7 @@ def box_cox(data):
     return a
 
 #%% PCA definition
-def perform_pca(data, target=None, PC_criterion="KaiserGuttman", plotReduced = 0):
+def perform_pca(data, target=None, PC_criterion="KaiserGuttman", minvar=0.9, plotReduced = 0):
     pca = PCA()
     projected = pca.fit_transform(data )
     eigenvalues = pca.explained_variance_
@@ -72,8 +82,14 @@ def perform_pca(data, target=None, PC_criterion="KaiserGuttman", plotReduced = 0
     eigenvalues_ABC = ABC_analysis(eigenvalues)
     n_PCs_ABC = len(eigenvalues_ABC["Aind"])
     eigv_limit = eigenvalues_ABC["ABlimit"]
-      
-    n_PCs = n_PCs_ABC if PC_criterion=="ABC" else n_PCs_KaiserGuttmann
+    
+    
+    if PC_criterion=="ABC": 
+        n_PCs = n_PCs_ABC 
+    elif PC_criterion == "ExplainedVar":
+        n_PCs = np.argmax(np.cumsum(pca.explained_variance_ratio_) >= minvar) + 1
+    else:
+        n_PCs = n_PCs_KaiserGuttmann
     if n_PCs < 2:
         n_PCs = 2 
     varimportance = feature_imp_mat.sum(axis=1)
@@ -90,6 +106,12 @@ def perform_pca(data, target=None, PC_criterion="KaiserGuttman", plotReduced = 0
             ax3 = fig.add_subplot(gs0[:4, :4])  
             ax5 = fig.add_subplot(gs0[:2, 4:6]) 
             ax6 = fig.add_subplot(gs0[2:4:, 4:6]) 
+            
+            axes = [ax3, ax5, ax6]
+            for i, ax in enumerate(axes):
+                annotate_axes(ax,  str(string.ascii_lowercase[i])+")")
+
+
                     
             PCA_biplot(ax = ax3, projections=projected, components = pca.components_ , target = target, labels = data.columns)
             ax3.set_title("Projections")
@@ -105,8 +127,12 @@ def perform_pca(data, target=None, PC_criterion="KaiserGuttman", plotReduced = 0
             ax6.set_title("Eigenvalues")
             ax6.set_ylabel("Eigenvalues")
             ax6.set_xticklabels(ax6.get_xticklabels(), rotation=90)
-            ax6.axhline(1, color="blue", linestyle="dotted")
-            ax6.axhline(eigv_limit, color="salmon", linestyle="dotted")
+            if PC_criterion=="ABC": 
+                ax6.axhline(eigv_limit, color="salmon", linestyle="dotted")
+            elif PC_criterion == "ExplainedVar":
+                ax5.axhline(minvar, color="salmon", linestyle="dotted")
+            else:
+                ax6.axhline(1, color="salmon", linestyle="dotted")
             ax6.text(0.5, 0.95 * np.max(eigenvalues), "Retained PCs: " + str(n_PCs), va="center", color="red")
             
         elif plotReduced == 1:
@@ -118,7 +144,10 @@ def perform_pca(data, target=None, PC_criterion="KaiserGuttman", plotReduced = 0
             ax7 = fig.add_subplot(gs0[6:, 2:4]) 
             ax5 = fig.add_subplot(gs0[4:6, :2]) 
             ax6 = fig.add_subplot(gs0[6:, :2]) 
-                    
+            axes = [ax3, ax5, ax6, ax8, ax7]
+            for i, ax in enumerate(axes):
+                annotate_axes(ax,  str(string.ascii_lowercase[i])+")") 
+
             PCA_biplot(ax = ax3, projections=projected, components = pca.components_ , target = target, labels = data.columns)
             ax3.set_title("Projections")
     
@@ -140,12 +169,19 @@ def perform_pca(data, target=None, PC_criterion="KaiserGuttman", plotReduced = 0
             ax6.set_title("Eigenvalues")
             ax6.set_ylabel("Eigenvalues")
             ax6.set_xticklabels(ax6.get_xticklabels(), rotation=90)
-            ax6.axhline(1, color="blue", linestyle="dotted")
-            ax6.axhline(eigv_limit, color="salmon", linestyle="dotted")
+            if PC_criterion=="ABC": 
+                ax6.axhline(eigv_limit, color="salmon", linestyle="dotted")
+            elif PC_criterion == "ExplainedVar":
+                ax5.axhline(minvar, color="salmon", linestyle="dotted")
+            else:
+                ax6.axhline(1, color="salmon", linestyle="dotted")
             ax6.text(0.5, 0.95 * np.max(eigenvalues), "Retained PCs: " + str(n_PCs), va="center", color="red")
     
+            ABC_A_varimportance_n_PCs_limit = min(ABC_analysis(varimportance_n_PCs)["Aind"]["value"])
+            barcols = ["blue" if i < ABC_A_varimportance_n_PCs_limit else "darkblue" for i in varimportance_n_PCs]
+    
             sns.barplot(ax=ax8, x =list(feature_imp_mat.index), y = varimportance, color = "dodgerblue")
-            sns.barplot(ax=ax8, x =list(feature_imp_mat.index), y = varimportance_n_PCs, color = "blue")
+            sns.barplot(ax=ax8, x =list(feature_imp_mat.index), y = varimportance_n_PCs, palette = barcols)
             ax8.set_xticklabels(ax8.get_xticklabels(), rotation=90)
             ax8.set_ylabel("Sum (|Z loadings| * explained variance)")
             ax8.set_title("Variable importance")
@@ -155,14 +191,17 @@ def perform_pca(data, target=None, PC_criterion="KaiserGuttman", plotReduced = 0
             fig = plt.figure(figsize=(20, 20))
             gs0 = gridspec.GridSpec(8, 8, figure=fig, wspace=.4, hspace=.5)
 
-            ax1 = fig.add_subplot(gs0[:2, :4])  
-            ax2 = fig.add_subplot(gs0[2:3,:4])  
-            ax3 = fig.add_subplot(gs0[:4, 4:])  
-            ax8 = fig.add_subplot(gs0[3:5, :4]) 
-            ax7 = fig.add_subplot(gs0[5:5+heatmapsize, :4]) 
-            ax4 = fig.add_subplot(gs0[5:5+heatmapsize, 4:])     
-            ax5 = fig.add_subplot(gs0[4:5, 4:6]) 
-            ax6 = fig.add_subplot(gs0[4:5:, 6:]) 
+            ax1 = fig.add_subplot(gs0[:2, 4:])  
+            ax2 = fig.add_subplot(gs0[2:3,4:])  
+            ax3 = fig.add_subplot(gs0[:4, :4])  
+            ax8 = fig.add_subplot(gs0[3:5, 4:]) 
+            ax7 = fig.add_subplot(gs0[5:5+heatmapsize, 4:]) 
+            ax4 = fig.add_subplot(gs0[5:5+heatmapsize, :4])     
+            ax5 = fig.add_subplot(gs0[4:5, :2]) 
+            ax6 = fig.add_subplot(gs0[4:5:, 2:4]) 
+            axes = [ax3, ax5, ax6, ax4, ax1, ax2, ax8, ax7]
+            for i, ax in enumerate(axes):
+                annotate_axes(ax,  str(string.ascii_lowercase[i])+ ")")
                 
             sns.kdeplot(ax= ax1, data = data, palette="hsv")
             ax1.set_title("Distribution of variables submitted to projection")
@@ -203,12 +242,19 @@ def perform_pca(data, target=None, PC_criterion="KaiserGuttman", plotReduced = 0
             ax6.set_title("Eigenvalues")
             ax6.set_ylabel("Eigenvalues")
             ax6.set_xticklabels(ax6.get_xticklabels(), rotation=90)
-            ax6.axhline(1, color="blue", linestyle="dotted")
-            ax6.axhline(eigv_limit, color="salmon", linestyle="dotted")
+            if PC_criterion=="ABC": 
+                ax6.axhline(eigv_limit, color="salmon", linestyle="dotted")
+            elif PC_criterion == "ExplainedVar":
+                ax5.axhline(minvar, color="salmon", linestyle="dotted")
+            else:
+                ax6.axhline(1, color="salmon", linestyle="dotted")
             ax6.text(0.5, 0.95 * np.max(eigenvalues), "Retained PCs: " + str(n_PCs), va="center", color="red")
 
+            ABC_A_varimportance_n_PCs_limit = min(ABC_analysis(varimportance_n_PCs)["Aind"]["value"])
+            barcols = ["blue" if i < ABC_A_varimportance_n_PCs_limit else "darkblue" for i in varimportance_n_PCs]
+    
             sns.barplot(ax=ax8, x =list(feature_imp_mat.index), y = varimportance, color = "dodgerblue")
-            sns.barplot(ax=ax8, x =list(feature_imp_mat.index), y = varimportance_n_PCs, color = "blue")
+            sns.barplot(ax=ax8, x =list(feature_imp_mat.index), y = varimportance_n_PCs, palette = barcols)
             ax8.set_xticklabels(ax8.get_xticklabels(), rotation=90)
             ax8.set_ylabel("Sum (|Z loadings| * explained variance)")
             ax8.set_title("Variable importance")
