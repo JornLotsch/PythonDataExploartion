@@ -6,6 +6,8 @@ Created on Thu Feb  3 09:24:08 2022
 @author: joern
 """
 
+# %% imports
+
 from sklearn.metrics import silhouette_samples, silhouette_score
 from sklearn.base import clone
 import seaborn as sns

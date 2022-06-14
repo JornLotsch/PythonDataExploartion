@@ -6,14 +6,19 @@ Created on Wed Jan 12 12:05:18 2022
 @author: joern
 """
 
+# %% imports
+
 import seaborn as sns
 import matplotlib.pyplot as plt
 from sklearn import preprocessing
 import pandas as pd
+import numpy as np
 
 
 def box_and_heatplot(data, title=None, scale=False, **kwargs):
 
+    data = data.select_dtypes(include=np.number)
+    
     fig, axes = plt.subplots(1, 2, figsize=(20, 20))
     Title = ("Groups of variables: " +
              title) if title != None else "Variables"
@@ -28,7 +33,7 @@ def box_and_heatplot(data, title=None, scale=False, **kwargs):
             ax = sns.heatmap(ax=axes[0], data=data, **kwargs)
         ax.set_xticklabels(ax.get_xticklabels(), rotation=90)
         ax = sns.violinplot(ax=axes[1], data=data,
-                            saturation=0.5, linewidth=0.1)
+                            saturation=0.5, linewidth=0.1, cut = 0)
         ax.set_xticklabels(ax.get_xticklabels(), rotation=90)
         plt.setp(ax.collections, alpha=.5)
         sns.swarmplot(ax=axes[1], data=data)
