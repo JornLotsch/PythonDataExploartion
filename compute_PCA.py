@@ -20,8 +20,7 @@ from matplotlib import cm
 
 import matplotlib.gridspec as gridspec
 from scipy.stats import boxcox
-from ABCanalysis import ABC_analysis
-
+from cABCanalysis import  cABCanalysis
 
 # https://stackoverflow.com/questions/39216897/plot-pca-loadings-and-loading-in-biplot-in-sklearn-like-rs-autoplot
 
@@ -88,7 +87,7 @@ def perform_pca(data, target=None, PC_criterion="KaiserGuttman", minvar=0.9, plo
     feature_imp_mat = df_dotproduct_z.abs() * explainedvar
 
     n_PCs_KaiserGuttmann = np.argmax(eigenvalues < 1)
-    eigenvalues_ABC = ABC_analysis(eigenvalues)
+    eigenvalues_ABC =  cABCanalysis(eigenvalues)
     n_PCs_ABC = len(eigenvalues_ABC["Aind"])
     eigv_limit = eigenvalues_ABC["ABlimit"]
 
@@ -127,7 +126,7 @@ def perform_pca(data, target=None, PC_criterion="KaiserGuttman", minvar=0.9, plo
 
             axes = [ax3, ax5, ax6]
             for i, ax in enumerate(axes):
-                annotate_axes(ax,  str(string.ascii_lowercase[i])+")")
+                annotate_axes(ax,  str(string.ascii_uppercase[i]))
 
             PCA_biplot(ax=ax3, projections=projected, components=pca.components_,
                        target=target, labels=data.columns, biplot=biplot)
@@ -166,7 +165,7 @@ def perform_pca(data, target=None, PC_criterion="KaiserGuttman", minvar=0.9, plo
             ax6 = fig.add_subplot(gs0[6:, :2])
             axes = [ax3, ax5, ax6, ax8, ax7]
             for i, ax in enumerate(axes):
-                annotate_axes(ax,  str(string.ascii_lowercase[i])+")")
+                annotate_axes(ax,  str(string.ascii_uppercase[i]))
 
             PCA_biplot(ax=ax3, projections=projected, components=pca.components_,
                        target=target, labels=data.columns, biplot=biplot)
@@ -204,7 +203,7 @@ def perform_pca(data, target=None, PC_criterion="KaiserGuttman", minvar=0.9, plo
                      "Retained PCs: " + str(n_PCs), va="center", color="red")
 
             ABC_A_varimportance_n_PCs_limit = min(
-                ABC_analysis(varimportance_n_PCs)["Aind"]["value"])
+                 cABCanalysis(varimportance_n_PCs)["Aind"]["value"])
             barcols = [
                 "blue" if i < ABC_A_varimportance_n_PCs_limit else "darkblue" for i in varimportance_n_PCs]
 
@@ -235,7 +234,7 @@ def perform_pca(data, target=None, PC_criterion="KaiserGuttman", minvar=0.9, plo
             ax6 = fig.add_subplot(gs0[4:5:, 2:4])
             axes = [ax3, ax5, ax6, ax4, ax1, ax2, ax8, ax7]
             for i, ax in enumerate(axes):
-                annotate_axes(ax,  str(string.ascii_lowercase[i]) + ")")
+                annotate_axes(ax,  str(string.ascii_uppercase[i]))
 
             sns.kdeplot(ax=ax1, data=data, palette="hsv")
             ax1.set_title("Distribution of variables submitted to projection")
@@ -293,7 +292,7 @@ def perform_pca(data, target=None, PC_criterion="KaiserGuttman", minvar=0.9, plo
                      "Retained PCs: " + str(n_PCs), va="center", color="red")
 
             ABC_A_varimportance_n_PCs_limit = min(
-                ABC_analysis(varimportance_n_PCs)["Aind"]["value"])
+                 cABCanalysis(varimportance_n_PCs)["Aind"]["value"])
             barcols = [
                 "blue" if i < ABC_A_varimportance_n_PCs_limit else "darkblue" for i in varimportance_n_PCs]
 
