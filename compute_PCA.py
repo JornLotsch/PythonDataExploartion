@@ -13,6 +13,7 @@ import numpy as np
 import string
 
 from sklearn.decomposition import PCA
+from sklearn.preprocessing import StandardScaler
 
 import seaborn as sns
 import matplotlib.pyplot as plt
@@ -74,17 +75,15 @@ def perform_pca(data, target=None, PC_criterion="KaiserGuttman", minvar=0.9, plo
     #np.transpose(pca.components_[0:2, :])
 
     explainedvar = pca.explained_variance_ratio_
-    loadings = pca.components_.T * np.sqrt(pca.explained_variance_)
-    loadings_z = loadings - loadings.mean()/loadings.std()
-    df_loadings_z = pd.DataFrame(loadings_z, index=data.columns, columns=[
+    loadings = pd.DataFrame(pca.components_.T * np.sqrt(pca.explained_variance_), index=data.columns, columns=[
+                                 "PC"+str(i) for i in (range(1, pca.n_components_+1))])
+    loadings_z = pd.DataFrame(abs(loadings) / abs(loadings).std(), index=data.columns, columns=[
+                                 "PC"+str(i) for i in (range(1, pca.n_components_+1))])
+    # loadings_z = (abs(loadings) - abs(loadings).mean())/abs(loadings).std()
+    df_loadings_z = pd.DataFrame(loadings_z.values, index=data.columns, columns=[
                                  "PC"+str(i) for i in (range(1, pca.n_components_+1))])
 
-    dot_matrix = np.dot(data.T, projected)
-    df_dotproduct = pd.DataFrame(dot_matrix, index=data.columns, columns=[
-                                 "PC"+str(i) for i in (range(1, pca.n_components_+1))])
-    df_dotproduct_z = (df_dotproduct.copy() -
-                       df_dotproduct.mean())/df_dotproduct.std()
-    feature_imp_mat = df_dotproduct_z.abs() * explainedvar
+    feature_imp_mat = df_loadings_z * explainedvar
 
     n_PCs_KaiserGuttmann = np.argmax(eigenvalues < 1)
     eigenvalues_ABC =  cABCanalysis(eigenvalues)
@@ -98,8 +97,6 @@ def perform_pca(data, target=None, PC_criterion="KaiserGuttman", minvar=0.9, plo
             np.cumsum(pca.explained_variance_ratio_) >= minvar) + 1
     else:
         n_PCs = n_PCs_KaiserGuttmann
-    # if n_PCs < 2:
-    #     n_PCs = 2
 
     if sortImportance:
         varimportance = feature_imp_mat.sum(
@@ -116,7 +113,9 @@ def perform_pca(data, target=None, PC_criterion="KaiserGuttman", minvar=0.9, plo
     heatmapsize = 3 if pca.n_components_ > 10 else 2
 
     with sns.axes_style("darkgrid"):
-        if plotReduced == 2:
+        if plotReduced == 0:
+            pass
+        elif plotReduced == 2:
             fig = plt.figure(figsize=(20, 20))
             gs0 = gridspec.GridSpec(8, 8, figure=fig, wspace=.4, hspace=.5)
 
@@ -137,7 +136,7 @@ def perform_pca(data, target=None, PC_criterion="KaiserGuttman", minvar=0.9, plo
             ax5.set_xlabel("PC number")
             ax5.set_ylabel("Explained variance")
             ax5.set_title("Cumulative explained variance")
-            ax5.text(0.6, 0.95, "Explained variance" + "\n" + "by retained PCs: " +
+            ax5.text(0.6, 0.95, "Explained variance\n" + "by retained PCs: " +
                      str(round(np.cumsum(pca.explained_variance_ratio_)[n_PCs - 1] * 100, 1)) + "%", va="bottom", ha="left", color="red")
 
             sns.barplot(ax=ax6, x=[
@@ -152,7 +151,7 @@ def perform_pca(data, target=None, PC_criterion="KaiserGuttman", minvar=0.9, plo
             else:
                 ax6.axhline(1, color="salmon", linestyle="dotted")
             ax6.text(0.5, 0.95 * np.max(eigenvalues),
-                     "Retained PCs: " + str(n_PCs), va="center", color="red")
+                     "Retained PCs: " + str(n_PCs) + ",\nCriterion: " + PC_criterion, va="center", color="red")
 
         elif plotReduced == 1:
             fig = plt.figure(figsize=(10, 20))
@@ -185,7 +184,7 @@ def perform_pca(data, target=None, PC_criterion="KaiserGuttman", minvar=0.9, plo
             ax5.set_xlabel("PC number")
             ax5.set_ylabel("Explained variance")
             ax5.set_title("Cumulative explained variance")
-            ax5.text(0.8, 0.95, "Explained variance" + "\n" + "by retained PCs: " +
+            ax5.text(0.8, 0.95, "Explained variance\n" + "by retained PCs: " +
                      str(round(np.cumsum(pca.explained_variance_ratio_)[n_PCs - 1] * 100, 1)) + "%", va="bottom", ha="left",  color="red")
 
             sns.barplot(ax=ax6, x=[
@@ -200,7 +199,7 @@ def perform_pca(data, target=None, PC_criterion="KaiserGuttman", minvar=0.9, plo
             else:
                 ax6.axhline(1, color="salmon", linestyle="dotted")
             ax6.text(0.5, 0.95 * np.max(eigenvalues),
-                     "Retained PCs: " + str(n_PCs), va="center", color="red")
+                     "Retained PCs: " + str(n_PCs) + ",\nCriterion: " + PC_criterion, va="center", color="red")
 
             ABC_A_varimportance_n_PCs_limit = min(
                  cABCanalysis(varimportance_n_PCs)["Aind"]["value"])
@@ -219,6 +218,7 @@ def perform_pca(data, target=None, PC_criterion="KaiserGuttman", minvar=0.9, plo
             ax8.set_ylabel("Sum (|Z loadings| * explained variance)")
             ax8.set_title("Variable importance")
             ax8.set(xticklabels=[])
+            ax8.set_xlabel(None)
 
         else:
             fig = plt.figure(figsize=(20, 20))
@@ -245,7 +245,7 @@ def perform_pca(data, target=None, PC_criterion="KaiserGuttman", minvar=0.9, plo
 
             VioletBlue = sns.color_palette(
                 "blend:#03118f,#ecebf4,#572c92", as_cmap=True)
-            sns.heatmap(ax=ax4, data=df_loadings_z.T, cmap=VioletBlue,
+            sns.heatmap(ax=ax4, data=loadings.T, cmap=VioletBlue,
                         cbar_kws=dict(use_gridspec=True, location="top"))
             ax4.set_yticklabels(ax4.get_yticklabels(), rotation=0)
             ax4.set_xticklabels(ax4.get_xticklabels(), rotation=90)
@@ -289,7 +289,7 @@ def perform_pca(data, target=None, PC_criterion="KaiserGuttman", minvar=0.9, plo
             else:
                 ax6.axhline(1, color="salmon", linestyle="dotted")
             ax6.text(0.5, 0.95 * np.max(eigenvalues),
-                     "Retained PCs: " + str(n_PCs), va="center", color="red")
+                     "Retained PCs: " + str(n_PCs) + ",\nCriterion: " + PC_criterion, va="center", color="red")
 
             ABC_A_varimportance_n_PCs_limit = min(
                  cABCanalysis(varimportance_n_PCs)["Aind"]["value"])

@@ -23,10 +23,13 @@ def clean_data(data, outlierremoval):
     type(data)
 
     if isinstance(data, list):
-        data = np.array(data)
+        data = pd.Series(data,  name="Var")
+
+    if isinstance(data, np.ndarray):
+        data = pd.Series(data,  name="Var")
 
     if isinstance(data, pd.DataFrame):
-        data = data.iloc[:, 0]
+        data = type(data.iloc[:, 0])
 
     if not is_numeric_dtype(data):
         raise Warning("Data is not numeric.")
@@ -70,8 +73,11 @@ def data_transform(data, tk_power):
     else:
         data_min = np.nanmin(data)
         if data_min <= 0:
-            data = data - data_min + 1
-        a = np.log(data.astype("float"))
+            s = np.sign(data)
+            data1 = np.absolute(data+1) ### - data_min + 1
+            a = s*np.log(data1.astype("float"))
+        else:
+            a = np.log(data.astype("float"))
     return a, BClambda
 
 # %% QQ
@@ -106,7 +112,11 @@ def create_plots(data, powers, normtest):
         data_transformed = data_transformed[~np.isnan(data_transformed)]
         data_transformed = data_transformed[~np.isinf(data_transformed)]
 
-        figColors = [("purple" if i == round(BClambda, 0) else (
+        closest_BC_diff = [abs(i - BClambda)  for i in powers.values()]
+        BCL, idx = min((BCL, idx) for (idx, BCL) in enumerate(closest_BC_diff))
+        closest_BC = list(powers.values())[idx]
+        
+        figColors = [("purple" if i == closest_BC else (
             "salmon" if i == 1 else "dodgerblue")) for i in powers.values()]
 
         if normtest == "KS test":
