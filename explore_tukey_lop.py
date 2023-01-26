@@ -19,6 +19,12 @@ from pandas.api.types import is_numeric_dtype
 
 
 # %%
+def closest(lst, K):
+    return lst[min(range(len(lst)), key=lambda i: abs(lst[i]-K))]
+
+# %%
+
+
 def clean_data(data, outlierremoval):
     type(data)
 
@@ -74,7 +80,7 @@ def data_transform(data, tk_power):
         data_min = np.nanmin(data)
         if data_min <= 0:
             s = np.sign(data)
-            data1 = np.absolute(data+1) ### - data_min + 1
+            data1 = np.absolute(data+1)  # - data_min + 1
             a = s*np.log(data1.astype("float"))
         else:
             a = np.log(data.astype("float"))
@@ -112,10 +118,10 @@ def create_plots(data, powers, normtest):
         data_transformed = data_transformed[~np.isnan(data_transformed)]
         data_transformed = data_transformed[~np.isinf(data_transformed)]
 
-        closest_BC_diff = [abs(i - BClambda)  for i in powers.values()]
+        closest_BC_diff = [abs(i - BClambda) for i in powers.values()]
         BCL, idx = min((BCL, idx) for (idx, BCL) in enumerate(closest_BC_diff))
         closest_BC = list(powers.values())[idx]
-        
+
         figColors = [("purple" if i == closest_BC else (
             "salmon" if i == 1 else "dodgerblue")) for i in powers.values()]
 
@@ -163,25 +169,31 @@ def create_plots(data, powers, normtest):
 
     return fig
 
-
 # %% Main function
+
+
 def explore_tukey_lop(data, powers=[-3, -2, -1, -0.5, -0.333333, 0, 0.333333, 0.5, 1, 2, 3], normtest="K^2 test", outlierremoval=False):
 
     powersDict = {"BoxCox": 10, "reciprocal cube": -3, "reciprocal square": -2, "reciprocal": -1, "reciprocal square root": -
                   0.5, "reciprocal cube root": -0.333333, "log": 0, "cube root": 0.333333, "square root": 0.5, "none": 1, "square": 2, "cube": 3}
 
     if powers:
-        if not all(x in powersDict.values() for x in powers):
-            raise Warning("Input does not macth Tukey's powers.")
+        powers_matched = [closest(list(powersDict.values()), i)
+                          for i in powers]
+        d_powers_matched = [powers_matched[i] - powers[i]
+                            for i in range(len(powers))]
+        # if not all(x in powersDict.values() for x in powers):
+        if max(d_powers_matched) > 0.5:
+            raise Warning("Input does not match included Tukey's powers.")
             return
         else:
             powers = {key: value for key, value in powersDict.items()
-                      if value == 10 or value in powers}
+                      if value == 10 or value in powers_matched}
     else:
         powers = powersDict
 
     if not normtest in ["K^2 test", "KS test"]:
-        print("For normality testing, D’Agostino’s K^2 test and the KS test are implemented! Normailty test set to D’Agostino’s K^2 test.")
+        print("For normality testing, D’Agostino’s K^2 test and the KS test are implemented! Normality test set to D’Agostino’s K^2 test.")
         normtest = "K^2 test"
 
     CleanedData, dataOK = clean_data(data, outlierremoval)
