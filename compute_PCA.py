@@ -8,20 +8,19 @@ Created on Tue Feb  1 08:09:01 2022
 
 # %% imports
 
-import pandas as pd
-import numpy as np
 import string
 
-from sklearn.decomposition import PCA
-from sklearn.preprocessing import StandardScaler
-
-import seaborn as sns
-import matplotlib.pyplot as plt
-from matplotlib import cm
-
 import matplotlib.gridspec as gridspec
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
+import seaborn as sns
+from matplotlib import cm
 from scipy.stats import boxcox
-from cABCanalysis import  cABCanalysis
+from sklearn.decomposition import PCA
+
+from cABCanalysis import cABCanalysis
+
 
 # https://stackoverflow.com/questions/39216897/plot-pca-loadings-and-loading-in-biplot-in-sklearn-like-rs-autoplot
 
